@@ -126,14 +126,19 @@ function gravarIdade(sh, ini, n) {
 
 // ================= ESTRUTURA DA COLUNA TIPO =================
 function prepararAba(sh) {
-  if (String(sh.getRange(3, COL_TIPO).getValue()).toUpperCase() === 'TIPO') return;
-  sh.getRange(2, 16, 2, 1).copyTo(sh.getRange(2, COL_TIPO, 2, 1), { formatOnly: true });
   var cab = sh.getRange(2, COL_TIPO, 2, 1);
-  try { cab.merge(); } catch (e) {}
-  sh.getRange(2, COL_TIPO).setValue('TIPO');
-  sh.getRange(3, COL_TIPO).setValue('TIPO');
+  var v = cab.getValues();
+  if (String(v[1][0]).toUpperCase() === 'TIPO' && sh.getRange(3, COL_TIPO).getBackground() !== '#ffffff') return;
+  var ref = sh.getRange(3, 16);
+  cab.setValues([['TIPO'], ['TIPO']])
+    .setBackground(ref.getBackground())
+    .setFontColor(ref.getFontColor())
+    .setFontWeight('bold')
+    .setFontFamily(ref.getFontFamily())
+    .setFontSize(ref.getFontSize())
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle');
   sh.setColumnWidth(COL_TIPO, 110);
-  sh.getRange(1, 16).copyTo(sh.getRange(1, COL_TIPO), { formatOnly: true });
   aplicarRegras(sh);
 }
 
