@@ -111,8 +111,10 @@ function gravarIdade(sh, ini, n) {
   var sep = PropertiesService.getDocumentProperties().getProperty('sep') || ',';
   var monta = function (s) {
     var f = [];
-    for (var i = 0; i < n; i++) var c = 'C' + (ini + i);
+    for (var i = 0; i < n; i++) {
+      var c = 'C' + (ini + i);
       f.push(['=IF(' + c + '=""' + s + '""' + s + 'IFERROR(DATEDIF(' + c + s + 'TODAY()' + s + '"Y")' + s + '""))']);
+    }
     return f;
   };
   var rg = sh.getRange(ini, 4, n, 1);
