@@ -200,7 +200,7 @@ function selecionar(key, pushUrl){
     iframe.setAttribute('title', doc.title);
     wrap.innerHTML = '';
     wrap.appendChild(iframe);
-    iframe.addEventListener('load', function(){ ligarNomeArquivo(iframe); });
+    iframe.addEventListener('load', function(){ ligarNomeArquivo(iframe); ligarPlanilha(iframe, key); });
     iframe.srcdoc = html;
   }, 10);
 
@@ -226,6 +226,76 @@ function ligarNomeArquivo(iframe){
     imprimirOriginal();
   };
   w.addEventListener('afterprint', function(){ setTimeout(function(){ document.title = TITULO_CENTRAL; }, 300); });
+}
+
+// ===== Envio automático para a planilha Mensalidades e contato =====
+const URL_PLANILHA = 'https://script.google.com/macros/s/AKfycbzpgx24vYxNB6Tyiw9HNGP2hSQXWeNjgyJjRXpnoHVG_J1125haWavR330v0HEiXnkv/exec';
+const CHAVE_PLANILHA = 'solary-docs-2026';
+const MAPA_PLANILHA = {
+  'admissao-s1': { unidade: 1, tipo: 'Permanente' },
+  'admissao-s2': { unidade: 2, tipo: 'Permanente' },
+  'admissao-cd-s1': { unidade: 1, tipo: 'Centro Dia' },
+  'admissao-cd-s2': { unidade: 2, tipo: 'Centro Dia' },
+  'hotelaria-s1': { unidade: 1, tipo: 'Hotelaria' },
+  'hotelaria-s2': { unidade: 2, tipo: 'Hotelaria' }
+};
+let ultimoEnvio = { txt: '', t: 0 };
+
+function avisoPlanilha(msg){
+  let el = document.getElementById('avisoPlanilha');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'avisoPlanilha';
+    el.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:9999;background:#1f4e79;color:#fff;padding:12px 18px;border-radius:8px;font:14px/1.4 Calibri,Arial,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.2);transition:opacity .4s';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg; el.style.opacity = '1';
+  clearTimeout(el._t); el._t = setTimeout(function(){ el.style.opacity = '0'; }, 3500);
+}
+
+function ligarPlanilha(iframe, key){
+  const cfg = MAPA_PLANILHA[key];
+  if(!cfg || URL_PLANILHA.indexOf('http') !== 0) return;
+  const w = iframe.contentWindow;
+  if(!w || w.__planilhaLigada) return;
+  const btn = w.document.getElementById('btn-gerar-tudo') || w.document.getElementById('btn-gerar');
+  if(!btn || typeof w.coletarDados !== 'function') return;
+  w.__planilhaLigada = true;
+  btn.addEventListener('click', function(){ setTimeout(function(){ enviarPlanilha(w, cfg); }, 50); });
+}
+
+function enviarPlanilha(w, cfg){
+  let d;
+  try { d = w.coletarDados(); } catch(e){ return; }
+  const doc = w.document;
+  const val = function(id){ const el = doc.getElementById(id); return el ? String(el.value || '').trim() : ''; };
+  const r = d.residente || {};
+  if(!r.nome) return;
+  const payload = {
+    chave: CHAVE_PLANILHA,
+    unidade: cfg.unidade,
+    tipo: cfg.tipo,
+    nome: r.nome,
+    cpf: r.cpf || '',
+    nascimento: r.nascimentoIso || '',
+    entrada: cfg.tipo === 'Hotelaria' ? val('hosp_checkin') : (d.dataEntradaIso || ''),
+    saida: cfg.tipo === 'Hotelaria' ? val('hosp_checkout') : '',
+    vencimento: cfg.tipo === 'Centro Dia' ? val('adm_data_vencimento') : '',
+    valor: d.valorMensal || '',
+    diaria: d.valorDiaria || '',
+    regime: d.regimePacote || '',
+    emailContratante: d.emailContratante || '',
+    responsaveis: (d.responsaveis || []).map(function(p){
+      return { nome: p.nome || '', parentesco: p.parentesco || '', telefone: p.telefone || '', email: p.email || '', endereco: p.endereco || '' };
+    })
+  };
+  const txt = JSON.stringify(payload);
+  const agora = Date.now();
+  if(txt === ultimoEnvio.txt && agora - ultimoEnvio.t < 15000) return;
+  ultimoEnvio = { txt: txt, t: agora };
+  fetch(URL_PLANILHA, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: txt })
+    .then(function(){ avisoPlanilha('Dados enviados para a planilha Mensalidades e contato'); })
+    .catch(function(){ avisoPlanilha('Não foi possível enviar para a planilha. Verifique a internet.'); });
 }
 
 function baseUrlSemQuery(){
