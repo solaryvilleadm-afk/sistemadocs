@@ -127,6 +127,29 @@ function gravarIdade(sh, ini, n) {
   }
 }
 
+// Deixa todas as linhas com a mesma letra e formato de uma linha modelo (letra azul escura, Arial 8)
+function linhaModelo(sh, ini, n) {
+  var cores = sh.getRange(ini, 1, n, 1).getFontColors();
+  var tam = sh.getRange(ini, 1, n, 1).getFontSizes();
+  for (var i = 0; i < n; i++) {
+    if (String(cores[i][0]).toLowerCase() === '#1f4e79' && Number(tam[i][0]) === 8) return ini + i;
+  }
+  return -1;
+}
+
+function padronizarFormato(sh, ini, n, ncol, comTipo) {
+  if (n <= 0) return;
+  var m = linhaModelo(sh, ini, n);
+  if (m < 0) return;
+  var largura = comTipo ? ncol - 1 : ncol;
+  var modelo = sh.getRange(m, 1, 1, largura);
+  modelo.copyTo(sh.getRange(ini, 1, n, largura), { formatOnly: true });
+  if (comTipo) {
+    sh.getRange(m, 16).copyTo(sh.getRange(ini, COL_TIPO, n, 1), { formatOnly: true });
+    sh.getRange(ini, COL_TIPO, n, 1).setHorizontalAlignment('center');
+  }
+}
+
 // ================= ESTRUTURA DA COLUNA TIPO =================
 function prepararAba(sh) {
   var cab = sh.getRange(2, COL_TIPO, 2, 1);
@@ -176,7 +199,7 @@ function gravarResidente(sh, d) {
       if (mesmoCpf || mesmoNome) { linha = INI_RES + i; break; }
     }
   }
-  if (linha < 0) { sh.insertRowBefore(fim + 1); linha = fim + 1; }
+  if (linha < 0) { sh.insertRowAfter(Math.max(fim, INI_RES - 1)); linha = Math.max(fim, INI_RES - 1) + 1; }
 
   var entrada = dataIso(d.entrada);
   var mesReajuste = '';
@@ -224,6 +247,7 @@ function organizarResidentes(sh) {
   // ordem alfabética nativa da planilha (move linhas inteiras com fórmulas e formatos)
   sh.getRange(INI_RES, 1, n, NCOL_RES).sort({ column: 1, ascending: true });
 
+  padronizarFormato(sh, INI_RES, n, NCOL_RES, true);
   gravarIdade(sh, INI_RES, n);
   sh.getRange(total, 10).setFormula('=SUM(J' + INI_RES + ':J' + (total - 1) + ')');
   pintarResidentes(sh, n);
@@ -291,6 +315,7 @@ function organizarContatos(sh, shR) {
   rg.setBackground(COR.branco);
   if (!linhas.length) return;
   sh.getRange(INI_CON, 1, linhas.length, NCOL_CON).setValues(linhas);
+  padronizarFormato(sh, INI_CON, linhas.length, NCOL_CON, false);
   pintarContatos(sh, shR);
 }
 
