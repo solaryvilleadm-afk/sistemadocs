@@ -178,7 +178,7 @@ function aplicarRegras(sh) {
   var outras = sh.getConditionalFormatRules().filter(function (r) {
     var c = r.getBooleanCondition();
     var v = c ? String(c.getCriteriaValues()[0]) : '';
-    return v.indexOf('$Q' + INI_RES) < 0;
+    return !/\$Q\d+="(Centro Dia|Hotelaria)"/.test(v);
   });
   outras.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=$Q' + INI_RES + '="Centro Dia"').setBackground(COR.centroDia).setRanges([dados]).build());
   outras.push(SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=$Q' + INI_RES + '="Hotelaria"').setBackground(COR.hotelaria).setRanges([dados]).build());
