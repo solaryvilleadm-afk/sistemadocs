@@ -235,12 +235,10 @@ function ligarNomeArquivo(iframe){
 const URL_PLANILHA = '';
 const CHAVE_PLANILHA = 'solary-docs-2026';
 const MAPA_PLANILHA = {
-  'admissao-s1': { unidade: 1, tipo: 'Permanente' },
-  'admissao-s2': { unidade: 2, tipo: 'Permanente' },
-  'admissao-cd-s1': { unidade: 1, tipo: 'Centro Dia' },
-  'admissao-cd-s2': { unidade: 2, tipo: 'Centro Dia' },
-  'hotelaria-s1': { unidade: 1, tipo: 'Hotelaria' },
-  'hotelaria-s2': { unidade: 2, tipo: 'Hotelaria' }
+  'admissao': { unidade: 'Santa Felicidade', tipo: 'Permanente' },
+  'admissao-cd': { unidade: 'Santa Felicidade', tipo: 'Centro Dia' },
+  'hotelaria': { unidade: 'Santa Felicidade', tipo: 'Hotelaria' },
+  'posop': { unidade: 'Santa Felicidade', tipo: 'Pós-Operatório' }
 };
 let ultimoEnvio = { txt: '', t: 0 };
 
@@ -281,10 +279,10 @@ function enviarPlanilha(w, cfg){
     nome: r.nome,
     cpf: r.cpf || '',
     nascimento: r.nascimentoIso || '',
-    entrada: cfg.tipo === 'Hotelaria' ? val('hosp_checkin') : (d.dataEntradaIso || ''),
-    saida: cfg.tipo === 'Hotelaria' ? val('hosp_checkout') : '',
+    entrada: cfg.tipo === 'Hotelaria' ? val('hosp_checkin') : cfg.tipo === 'Pós-Operatório' ? val('pos_entrada') : (d.dataEntradaIso || ''),
+    saida: cfg.tipo === 'Hotelaria' ? val('hosp_checkout') : cfg.tipo === 'Pós-Operatório' ? val('pos_saida') : '',
     vencimento: cfg.tipo === 'Centro Dia' ? val('adm_data_vencimento') : '',
-    valor: d.valorMensal || '',
+    valor: d.valorMensal || d.valor || (cfg.tipo === 'Hotelaria' ? val('hosp_valor') : ''),
     diaria: d.valorDiaria || '',
     regime: d.regimePacote || '',
     emailContratante: d.emailContratante || '',
